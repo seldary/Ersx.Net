@@ -1,32 +1,16 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Globalization;
-using System.Runtime.InteropServices;
 using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Xml;
 using System.Xml.Linq;
-using Microsoft.Win32;
 using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace seldary.Ersx_Net_Vsix
 {
-    /// <summary>
-    /// This is the class that implements the package exposed by this assembly.
-    ///
-    /// The minimum requirement for a class to be considered a valid package for Visual Studio
-    /// is to implement the IVsPackage interface and register itself with the shell.
-    /// This package uses the helper classes defined inside the Managed Package Framework (MPF)
-    /// to do it: it derives from the Package class that provides the implementation of the 
-    /// IVsPackage interface and uses the registration attributes defined in the framework to 
-    /// register itself and its components with the shell.
-    /// </summary>
-    // This attribute tells the PkgDef creation utility (CreatePkgDef.exe) that this class is
-    // a package.
     [PackageRegistration(UseManagedResourcesOnly = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
@@ -147,32 +131,27 @@ namespace seldary.Ersx_Net_Vsix
                 string itemFullPath;
                 ((IVsProject)hierarchy).GetMkDocument(itemId, out itemFullPath);
                 var fileInfo = new FileInfo(itemFullPath);
-                XDocument doc;
-                using (var streamReader = fileInfo.OpenText())
-                {
-                    doc = XDocument.Load(streamReader);
-                }
 
                 using (var fileStream = fileInfo.OpenWrite())
                 {
-                    var sortedDoc = SortDataByName(doc);
+                    var sortedDoc = SortDataByName(XDocument.Load(itemFullPath));
+                    File.WriteAllText(itemFullPath, string.Empty);
                     sortedDoc.Save(fileStream);
                 }
             }
         }
 
-        private static XDocument SortDataByName(XDocument resx)
+        private XDocument SortDataByName(XDocument resx)
         {
+            Func<XElement, string> name = _ => (string) _.Attribute("name");
             return new XDocument(
                 new XElement(resx.Root.Name,
-                    from comment in resx.Root.Nodes() where comment.NodeType == XmlNodeType.Comment select comment,
-                    from schema in resx.Root.Elements() where schema.Name.LocalName == "schema" select schema,
-                    from resheader in resx.Root.Elements("resheader") orderby (string)resheader.Attribute("name") select resheader,
-                    from assembly in resx.Root.Elements("assembly") orderby (string)assembly.Attribute("name") select assembly,
-                    from metadata in resx.Root.Elements("metadata") orderby (string)metadata.Attribute("name") select metadata,
-                    from data in resx.Root.Elements("data") orderby (string)data.Attribute("name") select data
-                )
-            );
+                    resx.Root.Nodes().Where(comment => comment.NodeType == XmlNodeType.Comment),
+                    resx.Root.Elements().Where(_ => _.Name.LocalName == "schema"),
+                    resx.Root.Elements("resheader").OrderBy(name),
+                    resx.Root.Elements("assembly").OrderBy(name),
+                    resx.Root.Elements("metadata").OrderBy(name),
+                    resx.Root.Elements("data").OrderBy(name)));
         }
     }
 }
