@@ -5,6 +5,7 @@
     <DisplayName>Resx sorter</DisplayName>
     <Description xml:space="preserve">Visual Studio extension that sorts resx files by key name</Description>
     <MoreInfo>https://github.com/seldary/Ersx.Net</MoreInfo>
+    <License>LICENSE.txt</License>
     <Icon>Resources\Package.ico</Icon>
     <PreviewImage>Resources\Package.ico</PreviewImage>
   </Metadata>
