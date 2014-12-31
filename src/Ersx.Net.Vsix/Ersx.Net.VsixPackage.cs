@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
-using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Xml.Linq;
 using Ersx.Net;
@@ -42,102 +43,70 @@ namespace seldary.Ersx_Net_Vsix
             {
                 return;
             }
+            var isResxFileSelected = GetSelectedResxFilePaths().Any();
+            menuCommand.Enabled = isResxFileSelected;
+            menuCommand.Visible = isResxFileSelected;
+        }
 
-            IVsHierarchy hierarchy;
+        private IEnumerable<string> GetSelectedFileFullPaths()
+        {
+            IVsMultiItemSelect multiItemSelect;
             uint itemId;
-            if (IsSingleProjectItemSelection(out hierarchy, out itemId))
+            IntPtr hierarchyPtr;
+            IntPtr selectionContainerPtr;
+            var currentSelectionResult = (GetGlobalService(typeof (SVsShellMonitorSelection)) as IVsMonitorSelection).
+                GetCurrentSelection(out hierarchyPtr, out itemId, out multiItemSelect, out selectionContainerPtr);
+            if (ErrorHandler.Failed(currentSelectionResult) ||
+                hierarchyPtr == IntPtr.Zero ||
+                itemId == VSConstants.VSITEMID_NIL ||
+                itemId == VSConstants.VSITEMID_ROOT)
             {
-                string itemFullPath;
-                ((IVsProject) hierarchy).GetMkDocument(itemId, out itemFullPath);
+                return Enumerable.Empty<string>();
+            }
 
-                var isResxFile = new FileInfo(itemFullPath).Extension.Equals(".resx", StringComparison.OrdinalIgnoreCase);
-                ToggleMenuCommand(menuCommand, isResxFile);
-            }
-            else
+            if (multiItemSelect == null)
             {
-                ToggleMenuCommand(menuCommand, false);
+                return new[]
+                {
+                    GetSelectedFileFullPath(itemId, Marshal.GetObjectForIUnknown(hierarchyPtr) as IVsHierarchy)
+                };
             }
+
+            uint selectedItemCount;
+            int pfSingleHirearchy;
+            multiItemSelect.GetSelectionInfo(out selectedItemCount, out pfSingleHirearchy);
+            var selectedItems = new VSITEMSELECTION[selectedItemCount];
+            multiItemSelect.GetSelectedItems(0, selectedItemCount, selectedItems);
+            return selectedItems.Select(_ => GetSelectedFileFullPath(_.itemid, _.pHier));
         }
 
-        private void ToggleMenuCommand(OleMenuCommand menuCommand, bool isEnabled)
+        private string GetSelectedFileFullPath(uint itemid, IVsHierarchy hierarchy)
         {
-            menuCommand.Enabled = isEnabled;
-            menuCommand.Visible = isEnabled;
+            string filePath;
+            hierarchy.GetCanonicalName(itemid, out filePath);
+            return filePath;
         }
 
-        private bool IsSingleProjectItemSelection(out IVsHierarchy hierarchy, out uint itemId)
+        private IEnumerable<string> GetSelectedResxFilePaths()
         {
-            hierarchy = null;
-            itemId = VSConstants.VSITEMID_NIL;
+            return GetSelectedFileFullPaths().Where(IsResxFile);
+        }
 
-            var monitorSelection = GetGlobalService(typeof (SVsShellMonitorSelection)) as IVsMonitorSelection;
-            var solution = GetGlobalService(typeof (SVsSolution)) as IVsSolution;
-            if (monitorSelection == null || solution == null)
-            {
-                return false;
-            }
-
-            var hierarchyPtr = IntPtr.Zero;
-            var selectionContainerPtr = IntPtr.Zero;
-
-            try
-            {
-                IVsMultiItemSelect multiItemSelect;
-                var currentSelectionResult = monitorSelection.GetCurrentSelection(out hierarchyPtr, out itemId,
-                    out multiItemSelect, out selectionContainerPtr);
-                if (ErrorHandler.Failed(currentSelectionResult) ||
-                    hierarchyPtr == IntPtr.Zero ||
-                    itemId == VSConstants.VSITEMID_NIL ||
-                    multiItemSelect != null ||
-                    itemId == VSConstants.VSITEMID_ROOT)
-                {
-                    return false;
-                }
-
-                hierarchy = Marshal.GetObjectForIUnknown(hierarchyPtr) as IVsHierarchy;
-                if (hierarchy == null)
-                {
-                    return false;
-                }
-
-                Guid guidProjectId;
-                return !ErrorHandler.Failed(solution.GetGuidOfProject(hierarchy, out guidProjectId));
-            }
-            finally
-            {
-                if (selectionContainerPtr != IntPtr.Zero)
-                {
-                    Marshal.Release(selectionContainerPtr);
-                }
-
-                if (hierarchyPtr != IntPtr.Zero)
-                {
-                    Marshal.Release(hierarchyPtr);
-                }
-            }
+        private bool IsResxFile(string fullPath)
+        {
+            return fullPath.EndsWith(".resx", StringComparison.OrdinalIgnoreCase);
         }
 
         #endregion
 
         private void MenuItemClick(object sender, EventArgs e)
         {
-            var menuCommand = sender as OleMenuCommand;
-            if (menuCommand == null)
+            foreach (var selectedFileFullPath in GetSelectedResxFilePaths())
             {
-                return;
+                _resxSorter.
+                    Sort(XDocument.Load(selectedFileFullPath)).
+                    Save(selectedFileFullPath);
             }
-
-            IVsHierarchy hierarchy;
-            uint itemId;
-            if (!IsSingleProjectItemSelection(out hierarchy, out itemId))
-            {
-                return;
-            }
-            string itemFullPath;
-            ((IVsProject) hierarchy).GetMkDocument(itemId, out itemFullPath);
-            _resxSorter.
-                Sort(XDocument.Load(itemFullPath)).
-                Save(itemFullPath);
         }
     }
 }
