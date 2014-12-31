@@ -1,10 +1,9 @@
 ﻿using System;
 using System.ComponentModel.Design;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Xml;
 using System.Xml.Linq;
+using Ersx.Net;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -18,6 +17,8 @@ namespace seldary.Ersx_Net_Vsix
     [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
     public sealed class Ersx_Net_VsixPackage : Package
     {
+        private readonly ResxSorter _resxSorter = new ResxSorter();
+
         #region Package Members
 
         protected override void Initialize()
@@ -69,8 +70,8 @@ namespace seldary.Ersx_Net_Vsix
             hierarchy = null;
             itemId = VSConstants.VSITEMID_NIL;
 
-            var monitorSelection = GetGlobalService(typeof(SVsShellMonitorSelection)) as IVsMonitorSelection;
-            var solution = GetGlobalService(typeof(SVsSolution)) as IVsSolution;
+            var monitorSelection = GetGlobalService(typeof (SVsShellMonitorSelection)) as IVsMonitorSelection;
+            var solution = GetGlobalService(typeof (SVsSolution)) as IVsSolution;
             if (monitorSelection == null || solution == null)
             {
                 return false;
@@ -82,11 +83,12 @@ namespace seldary.Ersx_Net_Vsix
             try
             {
                 IVsMultiItemSelect multiItemSelect;
-                var currentSelectionResult = monitorSelection.GetCurrentSelection(out hierarchyPtr, out itemId, out multiItemSelect, out selectionContainerPtr);
-                if (ErrorHandler.Failed(currentSelectionResult) || 
-                    hierarchyPtr == IntPtr.Zero || 
-                    itemId == VSConstants.VSITEMID_NIL || 
-                    multiItemSelect != null || 
+                var currentSelectionResult = monitorSelection.GetCurrentSelection(out hierarchyPtr, out itemId,
+                    out multiItemSelect, out selectionContainerPtr);
+                if (ErrorHandler.Failed(currentSelectionResult) ||
+                    hierarchyPtr == IntPtr.Zero ||
+                    itemId == VSConstants.VSITEMID_NIL ||
+                    multiItemSelect != null ||
                     itemId == VSConstants.VSITEMID_ROOT)
                 {
                     return false;
@@ -120,38 +122,22 @@ namespace seldary.Ersx_Net_Vsix
         private void MenuItemClick(object sender, EventArgs e)
         {
             var menuCommand = sender as OleMenuCommand;
-            if (menuCommand != null)
+            if (menuCommand == null)
             {
-                IVsHierarchy hierarchy;
-                uint itemId;
-                if (!IsSingleProjectItemSelection(out hierarchy, out itemId))
-                {
-                    return;
-                }
-                string itemFullPath;
-                ((IVsProject)hierarchy).GetMkDocument(itemId, out itemFullPath);
-                var fileInfo = new FileInfo(itemFullPath);
-
-                using (var fileStream = fileInfo.OpenWrite())
-                {
-                    var sortedDoc = SortDataByName(XDocument.Load(itemFullPath));
-                    File.WriteAllText(itemFullPath, string.Empty);
-                    sortedDoc.Save(fileStream);
-                }
+                return;
             }
-        }
 
-        private XDocument SortDataByName(XDocument resx)
-        {
-            Func<XElement, string> name = _ => (string) _.Attribute("name");
-            return new XDocument(
-                new XElement(resx.Root.Name,
-                    resx.Root.Nodes().Where(comment => comment.NodeType == XmlNodeType.Comment),
-                    resx.Root.Elements().Where(_ => _.Name.LocalName == "schema"),
-                    resx.Root.Elements("resheader").OrderBy(name),
-                    resx.Root.Elements("assembly").OrderBy(name),
-                    resx.Root.Elements("metadata").OrderBy(name),
-                    resx.Root.Elements("data").OrderBy(name)));
+            IVsHierarchy hierarchy;
+            uint itemId;
+            if (!IsSingleProjectItemSelection(out hierarchy, out itemId))
+            {
+                return;
+            }
+            string itemFullPath;
+            ((IVsProject) hierarchy).GetMkDocument(itemId, out itemFullPath);
+            _resxSorter.
+                Sort(XDocument.Load(itemFullPath)).
+                Save(itemFullPath);
         }
     }
 }

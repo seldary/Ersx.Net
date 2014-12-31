@@ -5,6 +5,8 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ersx.Net.Vsix", "src\Ersx.Net.Vsix\Ersx.Net.Vsix.csproj", "{CB7D8385-000B-4E08-A8D0-BD70708F322F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ersx.Net", "src\Ersx.Net\Ersx.Net.csproj", "{0C47E8BE-31B2-4453-BB98-0F309BAE3D61}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{CB7D8385-000B-4E08-A8D0-BD70708F322F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB7D8385-000B-4E08-A8D0-BD70708F322F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CB7D8385-000B-4E08-A8D0-BD70708F322F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C47E8BE-31B2-4453-BB98-0F309BAE3D61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C47E8BE-31B2-4453-BB98-0F309BAE3D61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C47E8BE-31B2-4453-BB98-0F309BAE3D61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C47E8BE-31B2-4453-BB98-0F309BAE3D61}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
