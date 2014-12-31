@@ -3,7 +3,8 @@
   <Metadata>
     <Identity Id="98f02450-8809-4a3e-aa20-a3f55457c910" Version="1.0" Language="en-US" Publisher="seldary" />
     <DisplayName>Resx sorter</DisplayName>
-    <Description>Context menu button that sorts resx files by key name</Description>
+    <Description xml:space="preserve">Visual Studio extension that sorts resx files by key name</Description>
+    <MoreInfo>https://github.com/seldary/Ersx.Net</MoreInfo>
     <Icon>Resources\Package.ico</Icon>
     <PreviewImage>Resources\Package.ico</PreviewImage>
   </Metadata>
