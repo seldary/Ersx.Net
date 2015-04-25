@@ -15,7 +15,7 @@ namespace seldary.Ersx_Net_Vsix
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(GuidList.guidErsx_Net_VsixPkgString)]
-    [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
+    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExistsAndFullyLoaded_string)]
     public sealed class Ersx_Net_VsixPackage : Package
     {
         private readonly ResxSorter _resxSorter = new ResxSorter();
@@ -37,10 +37,13 @@ namespace seldary.Ersx_Net_Vsix
             if (_oleMenuCommandService != null)
             {
                 var menuCommandId = new CommandID(GuidList.guidErsx_Net_VsixCmdSet, (int) PkgCmdIDList.sortResx);
-                var menuItem = new OleMenuCommand(MenuItemClick, menuCommandId);
-                menuItem.BeforeQueryStatus += BeforeContextMenuOpens;
+                var menuItem = new OleMenuCommand(MenuItemClick, StatusChanged, BeforeContextMenuOpens, menuCommandId);
                 _oleMenuCommandService.AddCommand(menuItem);
             }
+        }
+
+        private void StatusChanged(object sender, EventArgs e)
+        {
         }
 
         private void BeforeContextMenuOpens(object sender, EventArgs e)
@@ -115,10 +118,13 @@ namespace seldary.Ersx_Net_Vsix
                         Save(selectedResxFilePaths[i]);
 
                     _statusBar.Progress(ref cookie, 1, "", (uint) i + 1, (uint) selectedResxFilePaths.Count);
-                    _statusBar.SetText(string.Format("Sorting {0} out of {1} resx files...", i + 1, selectedResxFilePaths.Count));
+                    _statusBar.SetText(string.Format("Sorting {0} out of {1} resx files...", i + 1,
+                        selectedResxFilePaths.Count));
                 }
 
-                WriteToOutput(string.Join(Environment.NewLine, new[] {string.Format("Sorted {0} resx files:", selectedResxFilePaths.Count())}.Concat(selectedResxFilePaths)));
+                WriteToOutput(string.Join(Environment.NewLine,
+                    new[] {string.Format("Sorted {0} resx files:", selectedResxFilePaths.Count())}.Concat(
+                        selectedResxFilePaths)));
                 _statusBar.Progress(ref cookie, 0, "", 0, 0);
                 _statusBar.Animation(0, ref _sortIcon);
                 SetStatusBar("Resx sort succeeded");

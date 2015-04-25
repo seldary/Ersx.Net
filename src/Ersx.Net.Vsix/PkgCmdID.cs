@@ -4,10 +4,8 @@ using System;
 
 namespace seldary.Ersx_Net_Vsix
 {
-    static class PkgCmdIDList
+    internal static class PkgCmdIDList
     {
-        public const uint sortResx =        0x100;
-
-
+        public const uint sortResx = 0x100;
     };
 }
