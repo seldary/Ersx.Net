@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="98f02450-8809-4a3e-aa20-a3f55457c910" Version="1.1.1" Language="en-US" Publisher="seldary" />
+    <Identity Id="98f02450-8809-4a3e-aa20-a3f55457c910" Version="1.1.2" Language="en-US" Publisher="seldary" />
     <DisplayName>Resx sorter</DisplayName>
     <Description xml:space="preserve">Visual Studio extension that sorts resx files by key name</Description>
     <MoreInfo>https://github.com/seldary/Ersx.Net</MoreInfo>
